@@ -1,0 +1,170 @@
+<html>
+<head>
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.10/c3.min.css'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.css">
+
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.10/c3.min.js'></script>
+    <script src='//d3js.org/d3.v3.min.js'></script>
+    <script src='//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.min.js"></script>
+    <script src="https://www.chartjs.org/samples/latest/utils.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/0.5.7/chartjs-plugin-annotation.min.js"></script>
+
+    <style>
+		canvas {
+			-moz-user-select: none;
+			-webkit-user-select: none;
+			-ms-user-select: none;
+		}
+	</style>
+
+
+    <script>
+
+
+        window.formatNUmber = d3.format(',.2f');
+        window.start = "";
+        window.stop_first = "";
+        window.stop_last = "";
+        window.labels = [];
+
+        $(document).ready( function() {
+
+            d3.csv("balanta.csv", function(data){
+
+                data = data.map(function(el){
+
+                    var res = {};
+
+                    res['t'] = moment(el['Data'], "DD.MM.YYYY");
+
+                    if(res['t'].isSame(moment("2019-01-07"))){
+                        window.start = res['t'];
+                    }
+                    else if(res['t'].isSame(moment("2019-03-27"))){
+                        window.stop_first = res['t'];
+                    }
+                    else if(res['t'].isSame(moment("2019-08-21"))){
+                        window.stop_last = res['t'];
+                    }
+
+                    res['y'] = parseFloat( el['Sold'] );
+
+                    window.labels.push(res['t'].format("MMM DD"));
+
+                    return res;
+                });
+
+                console.log(data);
+                console.log(window.start);
+                console.log(window.stop);
+
+                // init chart js chart
+                var ctx = document.getElementById('chart1').getContext('2d');
+                ctx.canvas.width = 1000;
+                ctx.canvas.height = 300;
+
+                var color = Chart.helpers.color;
+                var cfg = {
+                    type: 'bar',
+                    data: {
+                        //labels: window.labels,
+                        datasets: [{
+                            label: 'Evolutia soldului',
+                            backgroundColor: color(window.chartColors.green).alpha(0.5).rgbString(),
+                            borderColor: window.chartColors.green,
+                            data: data,
+                            type: 'line',
+                            pointRadius: 0,
+                            fill: false,
+                            lineTension: 0,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            xAxes: [{
+                                type: 'time',
+                                distribution: 'series',
+                                ticks: {
+                                    source: 'data',
+                                    autoSkip: true
+                                }
+                            }],
+                            yAxes: [{
+                                scaleLabel: {
+                                    display: true,
+                                    labelString: 'Sold zilnic'
+                                }
+                            }]
+                        },
+                        tooltips: {
+                            intersect: false,
+                            mode: 'index',
+                            callbacks: {
+                                label: function(tooltipItem, myData) {
+                                    var label = myData.datasets[tooltipItem.datasetIndex].label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }   
+                                    label += window.formatNUmber(tooltipItem.value);
+                                    return label;
+                                }
+                            }
+                        },
+                        annotation: {
+                            annotations: [
+                                {                                
+                                    type: 'box',
+                                    // optional drawTime to control layering, overrides global drawTime setting
+                                    drawTime: 'beforeDatasetsDraw',
+                                    id: 'a-box-1',
+                                    xScaleID: 'x-axis-0',
+                                    yScaleID: 'y-axis-0',
+                                    xMin: window.start,
+                                    xMax: window.stop_first,
+                                    yMax: 20000,
+                                    yMin:  -80000,
+                                    borderColor: 'red',
+                                    borderWidth: 0,
+                                    backgroundColor: "rgba(255, 205, 86, 0.1)",
+                                },
+                                {                                
+                                    type: 'box',
+                                    // optional drawTime to control layering, overrides global drawTime setting
+                                    drawTime: 'beforeDatasetsDraw',
+                                    id: 'a-box-2',
+                                    xScaleID: 'x-axis-0',
+                                    yScaleID: 'y-axis-0',
+                                    xMin: window.stop_first,
+                                    xMax: window.stop_last,
+                                    yMax: 20000,
+                                    yMin:  -80000,
+                                    borderColor: 'red',
+                                    borderWidth: 0,
+                                    backgroundColor: "rgba(54, 162, 235, 0.1)",
+                                },
+
+                            ]
+                        }
+                    },
+                    plugins: {
+		                
+                    }
+                };
+
+                var chart = new Chart(ctx, cfg);
+
+            });
+});
+    </script>
+
+</head>
+<body>
+
+    <div style="width:1200px">
+		<canvas id="chart1"></canvas>
+	</div>
+</body>
+</html>
